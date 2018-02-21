@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>SignalR MoveShape Demo</title>
+    <style>
+        #hangman {
+            margin: auto;
+            width: 100px;
+            height: 100px;
+            border: 3px solid green;
+            margin-bottom: 100px;
+        }
+
+        #letters {
+            margin: auto;
+            text-align: center;
+        }
+
+        #letters li {
+            display: inline;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <script src="Scripts/jquery-1.10.2.min.js"></script>
+    <script src="Scripts/jquery-ui-1.10.3.min.js"></script>
+    <script src="Scripts/jquery.signalR-2.0.0.js"></script>
+    <script src="/signalr/hubs"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+        
+<script>
+    var hangmanModel = {
+
+        selectedWord: ko.observable(),
+        emptySpaceCount: ko.pureComputed(function () {
+            return this.selectedWord().length;
+        }),
+        updateSelectedWord: function () {
+            var word = document.getElementById('selectedWord').value;
+            this.selectedWord(word);
+        }
+    };
+
+    ko.applyBindings(hangmanModel);
+</script>
+<div id="hangman">
+   
+</div>
+<div data-bind="foreach: new Array(emptySpaceCount())" id="spaces">
+    <span data-bind="text: selectedWord().charAt($index)"style="text-decoration: underline">
+       
+    </span>
+</div>
+<ul id="letters">
+    
+</ul>
+<form>
+    <input id="selectedWord" type="text"/>
+    <button data-bind="click: updateSelectedWord"type="submit">Submit</button>
+</form>
+    
+<script>
+
+    var alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+    $.each(alphabet, function (index, value) {
+        var listItem = document.createElement('li');
+        listItem.innerHTML = '<button>' + value + '</button>';
+        document.getElementById('letters').appendChild(listItem);
+    });
+
+</script>
+
+</body>
+</html>
