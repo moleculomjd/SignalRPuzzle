@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Threading;
 using Microsoft.AspNet.SignalR;
 using Newtonsoft.Json;
@@ -17,7 +17,8 @@ namespace SignalRPuzzle
         private readonly IHubContext _hubContext;
         private Timer _broadcastLoop;
         public List<Piece> _pieces;
-        private bool _modelUpdated;
+        public string LastUpdatedBy;
+        public bool _modelUpdated;
         public Broadcaster()
         {
             // Save our hub context so we can easily use it 
@@ -34,17 +35,16 @@ namespace SignalRPuzzle
         }
         public void BroadcastPieces(object state)
         {
-            foreach (var piece in _pieces.Where(p => p.moved))
-            {
-                _hubContext.Clients.AllExcept(piece.LastUpdatedBy).updatePiece(piece);
-                piece.moved = false;
-            }
+            if(_modelUpdated)
+                _hubContext.Clients.AllExcept(LastUpdatedBy).updatePiece(_pieces);
+            _modelUpdated = false;
         }
         public void UpdatePiece(Piece clientModel)
         {
-            clientModel.moved = true;
             //need a lock here so we don't edit _pieces array during enumeration
-            _pieces[clientModel.index] = clientModel;
+            _pieces[clientModel.index].xPos = clientModel.xPos;
+            _pieces[clientModel.index].yPos = clientModel.yPos;
+            _modelUpdated = true;
         }
 
         public static Broadcaster Instance
@@ -70,7 +70,8 @@ namespace SignalRPuzzle
         }
         public void UpdatePiece(Piece clientModel)
         {
-            clientModel.LastUpdatedBy = Context.ConnectionId;
+            Debug.WriteLine($"UpdatePiece called from : {Context.ConnectionId} ");
+            _broadcaster.LastUpdatedBy = Context.ConnectionId;
             // Update the shape model within our broadcaster
             _broadcaster.UpdatePiece(clientModel);
         }
@@ -80,6 +81,16 @@ namespace SignalRPuzzle
             _broadcaster._pieces = pieces;
             Clients.AllExcept(Context.ConnectionId).updateShuffledPieces(pieces);
         }
+
+        public void OnPuzzleClick(Piece piece)
+        {
+            Clients.AllExcept(Context.ConnectionId).updatePuzzleClicked(piece);
+        }
+
+        //public void StyleDropPiece(Piece piece)
+        //{
+        //    Clients.AllExcept(Context.ConnectionId).updateDropPiece(piece);
+        //}
     }
     public class Piece
     {
@@ -95,12 +106,16 @@ namespace SignalRPuzzle
         public double xPos { get; set; }
         [JsonProperty("yPos")]
         public double yPos { get; set; }
+
+        [JsonProperty]
+        public double fixedXPos { get; set; }
+
+        [JsonProperty]
+        public double fixedYPos { get; set; }
         // We don't want the client to get the "LastUpdatedBy" property
         [JsonIgnore]
         public string LastUpdatedBy { get; set; }
-        [JsonIgnore]
-        [JsonProperty("moved")]
-        public bool moved { get; set; }
+        
     }
 
 }

@@ -17,6 +17,8 @@
 
         var _img;
         var _pieces = [];
+    //var _realtimePieces = [];
+        var _piecesDefault = [];
         var _puzzleWidth;
         var _puzzleHeight;
         var _pieceWidth;
@@ -24,7 +26,7 @@
         var _currentPiece;
         var _currentDropPiece;
         var _mouse;
-        var recipient = false;
+        var initiator = false;
 
         var puzzleHub = $.connection.puzzleHub,
             //$shape = $("#shape"),
@@ -42,10 +44,22 @@
 
             puzzleHub.client.updateShuffledPieces = function(pieces) {
                 _pieces = pieces;
+                //_piecesDefault = $.extend({}, _pieces);
                 redrawPieces(_pieces);
             }
+
+            puzzleHub.client.updatePuzzleClicked = function(piece) {
+                onPuzzleClickEvents(piece);
+            }
+
+            //puzzleHub.client.updateDropPiece = function(piece) {
+            //    styleDropPiece(piece);
+            //}
             
             puzzleHub.client.updatePiece = function (pieces) {
+
+                console.log("updating piece");
+                _stage.clearRect(0, 0, _puzzleWidth, _puzzleHeight);
 
                 for (var i = 0; i < pieces.length; i++) {
 
@@ -83,13 +97,21 @@
 
             for (var i = 0; i < movedPieces.length; i++) {
                 puzzleHub.server.updatePiece(movedPieces[i]);
-                moved = false;
+                movedPieces[i].moved = false;
             }
         }
 
         function broadcastShuffledPiecesArray() {
             puzzleHub.server.loadPieces(_pieces);
         }
+
+        function broadcastPuzzleClickedEvent(piece) {
+            puzzleHub.server.onPuzzleClick(piece);
+        }
+
+        //function broadcastDropPieceStyling(piece) {
+        //    puzzleHub.server.styleDropPiece(piece);
+        //}
 
         function wasMoved(piece) {
             return piece.moved === true;
@@ -161,7 +183,7 @@
         }
 
         function redrawPieces(pieces) {
-
+            //may need to ref fixed positions
             _stage.clearRect(0, 0, _puzzleWidth, _puzzleHeight);
             for (var i = 0; i < pieces.length; i++) {
                 var piece = _pieces[i];
@@ -182,6 +204,8 @@
             var yPos = 0;
             for (i = 0; i < _pieces.length; i++) {
                 piece = _pieces[i];
+                piece.fixedXPos = xPos;
+                piece.fixedYPos = yPos;
                 piece.xPos = xPos;
                 piece.yPos = yPos;
                 piece.index = i;
@@ -215,27 +239,35 @@
             }
             _currentPiece = checkPieceClicked();
             if (_currentPiece != null) {
-                _stage.clearRect(_currentPiece.xPos, _currentPiece.yPos, _pieceWidth, _pieceHeight);
-                _stage.save();
-                _stage.globalAlpha = .9;
-                _stage.drawImage(_img, _currentPiece.sx, _currentPiece.sy, _pieceWidth, _pieceHeight, _mouse.x - (_pieceWidth / 2), _mouse.y - (_pieceHeight / 2), _pieceWidth, _pieceHeight);
                 _currentPiece.xPos = (_mouse.x - (_pieceWidth / 2));
                 _currentPiece.yPos = (_mouse.y - (_pieceHeight / 2));
-                _currentPiece.moved = true;
-                _stage.restore();
+                //_currentPiece.moved = true;
+                //_stage.clearRect(_currentPiece.xPos, _currentPiece.yPos, _pieceWidth, _pieceHeight);
+                //_stage.save();
+                //_stage.globalAlpha = .9;
+                //_stage.drawImage(_img, _currentPiece.sx, _currentPiece.sy, _pieceWidth, _pieceHeight, _mouse.x - (_pieceWidth / 2), _mouse.y - (_pieceHeight / 2), _pieceWidth, _pieceHeight);
+                //_stage.restore();
+                broadcastPuzzleClickedEvent(_currentPiece);
+                onPuzzleClickEvents(_currentPiece);
                 document.onmousemove = updatePuzzle;
                 document.onmouseup = pieceDropped;
             }
         }
 
-        
+        function onPuzzleClickEvents(piece) {
+            _stage.clearRect(piece.fixedXPos, piece.fixedYPos, _pieceWidth, _pieceHeight);
+            _stage.save();
+            _stage.globalAlpha = .9;
+            _stage.drawImage(_img, piece.sx, piece.sy, _pieceWidth, _pieceHeight, piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
+            _stage.restore();
+        }
 
         function checkPieceClicked() {
             var i;
             var piece;
             for (i = 0; i < _pieces.length; i++) {
                 piece = _pieces[i];
-                if (_mouse.x < piece.xPos || _mouse.x > (piece.xPos + _pieceWidth) || _mouse.y < piece.yPos || _mouse.y > (piece.yPos + _pieceHeight)) {
+                if (_mouse.x < piece.fixedXPos || _mouse.x > (piece.fixedXPos + _pieceWidth) || _mouse.y < piece.fixedYPos || _mouse.y > (piece.fixedYPos + _pieceHeight)) {
                     //PIECE NOT HIT
                 }
                 else {
@@ -244,6 +276,8 @@
             }
             return null;
         }
+
+        
 
         function updatePuzzle(e) {
             _currentDropPiece = null;
@@ -261,12 +295,15 @@
             for (i = 0; i < _pieces.length; i++) {
                 piece = _pieces[i];
                 if (piece == _currentPiece) {
+                    piece.xPos = _mouse.x - (_pieceWidth / 2);
+                    piece.yPos = _mouse.y - (_pieceHeight / 2);
+                    piece.moved = true;
                     continue;
                 }
-                _stage.drawImage(_img, piece.sx, piece.sy, _pieceWidth, _pieceHeight, piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
-                _stage.strokeRect(piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
+                _stage.drawImage(_img, piece.sx, piece.sy, _pieceWidth, _pieceHeight, piece.fixedXPos, piece.fixedYPos, _pieceWidth, _pieceHeight);
+                _stage.strokeRect(piece.fixedXPos, piece.fixedYPos, _pieceWidth, _pieceHeight);
                 if (_currentDropPiece == null) {
-                    if (_mouse.x < piece.xPos || _mouse.x > (piece.xPos + _pieceWidth) || _mouse.y < piece.yPos || _mouse.y > (piece.yPos + _pieceHeight)) {
+                    if (_mouse.x < piece.fixedXPos || _mouse.x > (piece.fixedXPos + _pieceWidth) || _mouse.y < piece.fixedYPos || _mouse.y > (piece.fixedYPos + _pieceHeight)) {
                         //NOT OVER
                     }
                     else {
@@ -274,7 +311,7 @@
                         _stage.save();
                         _stage.globalAlpha = .4;
                         _stage.fillStyle = PUZZLE_HOVER_TINT;
-                        _stage.fillRect(_currentDropPiece.xPos, _currentDropPiece.yPos, _pieceWidth, _pieceHeight);
+                        _stage.fillRect(_currentDropPiece.fixedXPos, _currentDropPiece.fixedYPos, _pieceWidth, _pieceHeight);
                         _stage.restore();
                     }
                 }
@@ -286,16 +323,69 @@
             _stage.strokeRect(_mouse.x - (_pieceWidth / 2), _mouse.y - (_pieceHeight / 2), _pieceWidth, _pieceHeight);
         }
 
+        //function updatePuzzleEvents(selectedPiece) {
+            
+        //    _stage.clearRect(0, 0, _puzzleWidth, _puzzleHeight);
+        //    var i;
+        //    var piece;
+        //    for (i = 0; i < _pieces.length; i++) {
+        //        piece = _pieces[i];
+        //        if (piece == selectedPiece) {
+        //            continue;
+        //        }
+        //        _stage.drawImage(_img, piece.sx, piece.sy, _pieceWidth, _pieceHeight, piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
+        //        _stage.strokeRect(piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
+        //        if (_currentDropPiece == null) {
+        //            if (_mouse.x < piece.xPos || _mouse.x > (piece.xPos + _pieceWidth) || _mouse.y < piece.yPos || _mouse.y > (piece.yPos + _pieceHeight)) {
+        //                //NOT OVER
+        //            }
+        //            else {
+        //                _currentDropPiece = piece;
+        //                piece
+        //                styleDropPiece();
+        //                broadcastDropPieceStyling();
+        //            }
+        //        }
+        //    }
+        //    _stage.save();
+        //    _stage.globalAlpha = .6;
+        //    _stage.drawImage(_img, _currentPiece.sx, _currentPiece.sy, _pieceWidth, _pieceHeight, _mouse.x - (_pieceWidth / 2), _mouse.y - (_pieceHeight / 2), _pieceWidth, _pieceHeight);
+        //    _stage.restore();
+        //    _stage.strokeRect(_mouse.x - (_pieceWidth / 2), _mouse.y - (_pieceHeight / 2), _pieceWidth, _pieceHeight);
+        //}
+
+        //function styleDropPiece(dropPiece) {
+        //    _stage.save();
+        //    _stage.globalAlpha = .4;
+        //    _stage.fillStyle = PUZZLE_HOVER_TINT;
+        //    _stage.fillRect(dropPiece.xPos, dropPiece.yPos, _pieceWidth, _pieceHeight);
+        //    _stage.restore();
+        //}
+
         function pieceDropped(e) {
+
+            
             document.onmousemove = null;
             document.onmouseup = null;
-            if (_currentDropPiece != null) {
-                var tmp = { xPos: _currentPiece.xPos, yPos: _currentPiece.yPos };
-                _currentPiece.xPos = _currentDropPiece.xPos;
-                _currentPiece.yPos = _currentDropPiece.yPos;
+            if (_currentDropPiece == null) {
+                _currentPiece.moved = true;
+                _currentPiece.xPos = _currentPiece.fixedXPos;
+                _currentPiece.yPos = _currentPiece.fixedYPos;
+            } else {
+                var tmp = { xPos: _currentPiece.fixedXPos, yPos: _currentPiece.fixedYPos };
+                console.log(tmp);
+                _currentPiece.fixedXPos = _currentDropPiece.fixedXPos;
+                _currentPiece.fixedYPos = _currentDropPiece.fixedYPos;
+                _currentPiece.xPos = _currentPiece.fixedXPos;
+                _currentPiece.yPos = _currentPiece.fixedYPos;
+                _currentDropPiece.fixedXPos = tmp.xPos;
+                _currentDropPiece.fixedYPos = tmp.yPos;
                 _currentDropPiece.xPos = tmp.xPos;
                 _currentDropPiece.yPos = tmp.yPos;
+                _currentDropPiece.moved = true;
+                _currentPiece.moved = true;
             }
+
             resetPuzzleAndCheckWin();
         }
 
@@ -306,9 +396,9 @@
             var piece;
             for (i = 0; i < _pieces.length; i++) {
                 piece = _pieces[i];
-                _stage.drawImage(_img, piece.sx, piece.sy, _pieceWidth, _pieceHeight, piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
-                _stage.strokeRect(piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
-                if (piece.xPos != piece.sx || piece.yPos != piece.sy) {
+                _stage.drawImage(_img, piece.sx, piece.sy, _pieceWidth, _pieceHeight, piece.fixedXPos, piece.fixedYPos, _pieceWidth, _pieceHeight);
+                _stage.strokeRect(piece.fixedXPos, piece.fixedYPos, _pieceWidth, _pieceHeight);
+                if (piece.fixedXPos != piece.sx || piece.fixedYPos != piece.sy) {
                     gameWin = false;
                 }
             }
