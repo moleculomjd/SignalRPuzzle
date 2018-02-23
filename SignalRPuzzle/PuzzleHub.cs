@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Microsoft.AspNet.SignalR;
 using Newtonsoft.Json;
@@ -14,38 +16,37 @@ namespace SignalRPuzzle
             TimeSpan.FromMilliseconds(40);
         private readonly IHubContext _hubContext;
         private Timer _broadcastLoop;
-        private ShapeModel _model;
+        public List<Piece> _pieces;
         private bool _modelUpdated;
         public Broadcaster()
         {
             // Save our hub context so we can easily use it 
             // to send to its connected clients
-            _hubContext = GlobalHost.ConnectionManager.GetHubContext<MoveShapeHub>();
-            _model = new ShapeModel();
+            _hubContext = GlobalHost.ConnectionManager.GetHubContext<PuzzleHub>();
+            _pieces = new List<Piece>();
             _modelUpdated = false;
             // Start the broadcast loop
             _broadcastLoop = new Timer(
-                BroadcastShape,
+                BroadcastPieces,
                 null,
                 BroadcastInterval,
                 BroadcastInterval);
         }
-        public void BroadcastShape(object state)
+        public void BroadcastPieces(object state)
         {
-            // No need to send anything if our model hasn't changed
-            if (_modelUpdated)
+            foreach (var piece in _pieces.Where(p => p.moved))
             {
-                // This is how we can access the Clients property 
-                // in a static hub method or outside of the hub entirely
-                _hubContext.Clients.AllExcept(_model.LastUpdatedBy).updateShape(_model);
-                _modelUpdated = false;
+                _hubContext.Clients.AllExcept(piece.LastUpdatedBy).updatePiece(piece);
+                piece.moved = false;
             }
         }
-        public void UpdateShape(ShapeModel clientModel)
+        public void UpdatePiece(Piece clientModel)
         {
-            _model = clientModel;
-            _modelUpdated = true;
+            clientModel.moved = true;
+            //need a lock here so we don't edit _pieces array during enumeration
+            _pieces[clientModel.index] = clientModel;
         }
+
         public static Broadcaster Instance
         {
             get
@@ -55,36 +56,51 @@ namespace SignalRPuzzle
         }
     }
 
-    public class MoveShapeHub : Hub
+    public class PuzzleHub : Hub
     {
         // Is set via the constructor on each creation
         private Broadcaster _broadcaster;
-        public MoveShapeHub()
+        public PuzzleHub()
             : this(Broadcaster.Instance)
         {
         }
-        public MoveShapeHub(Broadcaster broadcaster)
+        public PuzzleHub(Broadcaster broadcaster)
         {
             _broadcaster = broadcaster;
         }
-        public void UpdateModel(ShapeModel clientModel)
+        public void UpdatePiece(Piece clientModel)
         {
             clientModel.LastUpdatedBy = Context.ConnectionId;
             // Update the shape model within our broadcaster
-            _broadcaster.UpdateShape(clientModel);
+            _broadcaster.UpdatePiece(clientModel);
+        }
+
+        public void LoadPieces(List<Piece> pieces)
+        {
+            _broadcaster._pieces = pieces;
+            Clients.AllExcept(Context.ConnectionId).updateShuffledPieces(pieces);
         }
     }
-    public class ShapeModel
+    public class Piece
     {
+        [JsonProperty("sx")]
+        public int sx { get; set; }
+        [JsonProperty("sy")] 
+        public int sy { get; set; }
+        [JsonProperty("index")]
+        public int index { get; set; }
         // We declare Left and Top as lowercase with 
         // JsonProperty to sync the client and server models
-        [JsonProperty("left")]
-        public double Left { get; set; }
-        [JsonProperty("top")]
-        public double Top { get; set; }
+        [JsonProperty("xPos")]
+        public double xPos { get; set; }
+        [JsonProperty("yPos")]
+        public double yPos { get; set; }
         // We don't want the client to get the "LastUpdatedBy" property
         [JsonIgnore]
         public string LastUpdatedBy { get; set; }
+        [JsonIgnore]
+        [JsonProperty("moved")]
+        public bool moved { get; set; }
     }
 
 }
