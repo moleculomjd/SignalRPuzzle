@@ -35,15 +35,20 @@ namespace SignalRPuzzle
         }
         public void BroadcastPieces(object state)
         {
-            if(_modelUpdated)
+            if (_modelUpdated)
+            {
                 _hubContext.Clients.AllExcept(LastUpdatedBy).updatePiece(_pieces);
+            }
+            
             _modelUpdated = false;
         }
         public void UpdatePiece(Piece clientModel)
         {
-            //need a lock here so we don't edit _pieces array during enumeration
-            _pieces[clientModel.index].xPos = clientModel.xPos;
-            _pieces[clientModel.index].yPos = clientModel.yPos;
+            var piece = _pieces[clientModel.index];
+            piece.xPos = clientModel.xPos;
+            piece.yPos = clientModel.yPos;
+            piece.fixedXPos = clientModel.fixedXPos;
+            piece.fixedYPos = clientModel.fixedYPos;
             _modelUpdated = true;
         }
 
@@ -70,7 +75,6 @@ namespace SignalRPuzzle
         }
         public void UpdatePiece(Piece clientModel)
         {
-            Debug.WriteLine($"UpdatePiece called from : {Context.ConnectionId} ");
             _broadcaster.LastUpdatedBy = Context.ConnectionId;
             // Update the shape model within our broadcaster
             _broadcaster.UpdatePiece(clientModel);
@@ -107,10 +111,10 @@ namespace SignalRPuzzle
         [JsonProperty("yPos")]
         public double yPos { get; set; }
 
-        [JsonProperty]
+        [JsonProperty("fixedXPos")]
         public double fixedXPos { get; set; }
 
-        [JsonProperty]
+        [JsonProperty("fixedYPos")]
         public double fixedYPos { get; set; }
         // We don't want the client to get the "LastUpdatedBy" property
         [JsonIgnore]
