@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - Signal R Mo Smartur </title>
+
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/Site.css" rel="stylesheet" />
+
+    <script src="~/Scripts/Lib/jquery-1.10.2.min.js"></script>
+    <script src="~/Scripts/Lib/jquery-ui-1.10.3.min.js"></script>
+    <script src="~/Scripts/Lib/jquery.signalR-2.2.3.js"></script>
+    <script src="~/Scripts/Lib/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout.mapping/2.4.1/knockout.mapping.min.js"></script>
+
+    <script src="/signalr/hubs"></script>
+    <script src="~/Scripts/App/Models/PlayerViewModel.js"></script>
+    <script src="~/Scripts/App/ViewModels/PlayerConnectionsViewModel.js"></script>
+    <script src="~/Scripts/App/ViewModels/PuzzleAppViewModel.js"></script>
+    <script src="~/Scripts/App/app.js"></script>
+
+</head>
+
+<body onload="init();">
+
+    <div class="">
+
+        <h1>SignalR Team Puzzle</h1>
+        <hr />
+
+        <div id="puzzleContainer">
+            @RenderBody()
+        </div>
+
+    </div>
+
+    </body>
+</html>
