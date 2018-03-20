@@ -10,8 +10,14 @@ function PuzzleAppViewModel() {
     self.hasJoinedTeam = ko.observable(false);
     self.gameStarted = ko.observable(false);
 
-    self.team = ko.observable();
-    self.teams = ko.observableArray(false);
+    self.teams = ko.observableArray([]);
+    self.myTeamName = ko.observable('');
+    self.myTeam = ko.computed(function () {
+        return self.teams().filter(t => t.name == self.myTeamName());
+    });
+    self.otherTeams = ko.computed(function () {
+        return self.teams().filter(t => t.name != self.myTeamName());
+    });
 
     self.newTeamName = ko.observable('');
 
@@ -40,18 +46,19 @@ function PuzzleAppViewModel() {
     };
 
     self.createTeam = function () {
-        self.team(self.newTeamName());
+        self.myTeamName(self.newTeamName());
         puzzleHub.state.teamName = self.newTeamName();
         puzzleHub.server.createTeam(self.newTeamName());
         self.newTeamName('');
-        //self.hasJoinedTeam(true);
+        self.hasJoinedTeam(true);
     }
 
     self.joinTeam = function (teamNameToJoin) {
+        self.myTeamName(teamNameToJoin);
         console.log('joining ' + teamNameToJoin);
         puzzleHub.state.teamName = teamNameToJoin;
         puzzleHub.server.joinTeam(teamNameToJoin);
-        //self.hasJoinedTeam(true);
+        self.hasJoinedTeam(true);
     }
 
     puzzleHub.client.teamChanged = function (teams) {

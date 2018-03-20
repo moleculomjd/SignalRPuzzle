@@ -36,12 +36,22 @@ namespace SignalRTeamPuzzle.Hubs
         public void LoadPuzzlePieces(List<PuzzlePiece> pieces)
         {
             _broadcaster._pieces = pieces;
-            Clients.AllExcept(Context.ConnectionId).updateShuffledPuzzlePieces(pieces);
+            var teamName = Clients.Caller.teamName;
+            if (!string.IsNullOrEmpty(teamName))
+            {
+                Clients.OthersInGroup(teamName).updateShuffledPuzzlePieces(pieces);
+            }
+            //Clients.AllExcept(Context.ConnectionId).updateShuffledPuzzlePieces(pieces);
         }
 
         public void OnPuzzleClick(PuzzlePiece piece)
         {
-            Clients.AllExcept(Context.ConnectionId).updatePuzzleClicked(piece);
+            var teamName = Clients.Caller.teamName;
+            if (!string.IsNullOrEmpty(teamName))
+            {
+                Clients.OthersInGroup(teamName).updatePuzzleClicked(piece);
+            }
+            //Clients.AllExcept(Context.ConnectionId).updatePuzzleClicked(piece);
         }
 
         //public void StyleDropPuzzlePiece(PuzzlePiece piece)

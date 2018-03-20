@@ -122,6 +122,7 @@ function init() {
     _img.src = "Content/nic_cage_indian.jpg";
     ko.applyBindings(new PlayerConnectionsViewModel(), document.getElementById("PlayerConnections"));
     ko.applyBindings(new PuzzleAppViewModel(), document.getElementById("PuzzleApp"));
+    ko.applyBindings(new HostViewModel(), document.getElementById("HostContainer"));
 }
 
 function onImage(e) {
