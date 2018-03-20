@@ -76,7 +76,14 @@ function PuzzleAppViewModel() {
     var initiator = false;
 
     // Puzzle Methods 
-    // TODO: Add event handler for mouse down event on the canvas.
+
+    function gameOver() {
+        $('#canvas').unbind('mousedown');
+        $('#canvas').unbind('mousemove');
+        $('#canvas').unbind('mouseup');
+        initPuzzle();
+        puzzleHub.server.gameOver();
+    }
 
     function updateServerModel() {
         // Only update server if we have a new movement
@@ -93,18 +100,6 @@ function PuzzleAppViewModel() {
         return piece.moved === true;
     }
 
-    function createTitle(msg) {
-        _stage.fillStyle = "#000000";
-        _stage.globalAlpha = .4;
-        _stage.fillRect(100, _puzzleHeight - 40, _puzzleWidth - 200, 40);
-        _stage.fillStyle = "#FFFFFF";
-        _stage.globalAlpha = 1;
-        _stage.textAlign = "center";
-        _stage.textBaseline = "middle";
-        _stage.font = "20px Arial";
-        _stage.fillText(msg, _puzzleWidth / 2, _puzzleHeight - 20);
-    }
-
     function redrawPieces(pieces) {
         console.log('shuffling pieces');
         //may need to ref fixed positions
@@ -115,7 +110,7 @@ function PuzzleAppViewModel() {
             _stage.strokeRect(piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
         }
 
-        document.onmousedown = onPuzzleClick;
+        $('#canvas').mousedown(onPuzzleClick);
     }
 
     function resetPuzzleAndCheckWin() {
@@ -145,11 +140,15 @@ function PuzzleAppViewModel() {
                 gameWin = false;
             }
         }
+        if (gameWin) {
+            gameOver();
+            alert('You Win!');
+        }
     }
 
     function pieceDropped(e) {
-        document.onmousemove = null;
-        document.onmouseup = null;
+        $('#canvas').unbind('mousemove');
+        $('#canvas').unbind('mouseup');
         if (_currentDropPiece == null) {
             _currentPiece.xPos = _currentPiece.fixedXPos;
             _currentPiece.yPos = _currentPiece.fixedYPos;
@@ -260,13 +259,19 @@ function PuzzleAppViewModel() {
             //_stage.restore();
             broadcastPuzzleClickedEvent(_currentPiece);
             onPuzzleClickEvents(_currentPiece);
-            document.onmousemove = updatePuzzle;
-            document.onmouseup = pieceDropped;
+            //document.onmousemove = updatePuzzle;
+            $('#canvas').mousemove(updatePuzzle);
+            //document.onmouseup = pieceDropped;
+            $('#canvas').mouseup(pieceDropped);
         }
     }
 
     function broadcastPuzzleClickedEvent(piece) {
         puzzleHub.server.onPuzzleClick(piece);
+    }
+
+    puzzleHub.client.gameOver = function (teamName, playerName) {
+        alert('GAME OVER... ' + playerName + ' has made the winning move to win the game for team: ' + teamName);
     }
 
     puzzleHub.client.updateShuffledPuzzlePieces = function (pieces) {

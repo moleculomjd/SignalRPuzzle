@@ -14,6 +14,8 @@ namespace SignalRTeamPuzzle.Hubs
         private static List<Player> ConnectedPlayers = new List<Player>();
         private static List<Team> Teams = new List<Team>();
 
+        private static bool IsGameOver { get; set; }
+
         public PuzzleHub() : this(Broadcaster.Instance) { }
 
         // Is set via the constructor on each creation
@@ -25,6 +27,14 @@ namespace SignalRTeamPuzzle.Hubs
         }
 
         #region Puzzle Methods
+
+        public void GameOver()
+        {
+            var playerName = Clients.Caller.playerName;
+            var teamName = Clients.Caller.teamName;
+            IsGameOver = true;
+            Clients.AllExcept(Context.ConnectionId).gameOver(teamName, playerName);
+        }
 
         public void UpdatePuzzlePiece(PuzzlePiece clientModel)
         {
