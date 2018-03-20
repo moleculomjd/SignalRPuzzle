@@ -93,25 +93,6 @@ function PuzzleAppViewModel() {
         return piece.moved === true;
     }
 
-    function onImage(e) {
-        _pieceWidth = Math.floor(_img.width / PUZZLE_DIFFICULTY);
-        _pieceHeight = Math.floor(_img.height / PUZZLE_DIFFICULTY);
-        _puzzleWidth = _pieceWidth * PUZZLE_DIFFICULTY;
-        _puzzleHeight = _pieceHeight * PUZZLE_DIFFICULTY;
-        setCanvas();
-        initPuzzle();
-    }
-
-    function initPuzzle() {
-        _pieces = [];
-        _mouse = { x: 0, y: 0 };
-        _currentPiece = null;
-        _currentDropPiece = null;
-        _stage.drawImage(_img, 0, 0, _puzzleWidth, _puzzleHeight, 0, 0, _puzzleWidth, _puzzleHeight);
-        createTitle("Click to Start Puzzle");
-        buildPieces();
-    }
-
     function createTitle(msg) {
         _stage.fillStyle = "#000000";
         _stage.globalAlpha = .4;
@@ -122,26 +103,6 @@ function PuzzleAppViewModel() {
         _stage.textBaseline = "middle";
         _stage.font = "20px Arial";
         _stage.fillText(msg, _puzzleWidth / 2, _puzzleHeight - 20);
-    }
-
-    function buildPieces() {
-        var i;
-        var piece;
-        var xPos = 0;
-        var yPos = 0;
-        for (i = 0; i < PUZZLE_DIFFICULTY * PUZZLE_DIFFICULTY; i++) {
-            piece = {};
-            piece.sx = xPos;
-            piece.sy = yPos;
-            _pieces.push(piece);
-            xPos += _pieceWidth;
-            if (xPos >= _puzzleWidth) {
-                xPos = 0;
-                yPos += _pieceHeight;
-            }
-        }
-
-        document.onmousedown = shufflePuzzle;
     }
 
     function redrawPieces(pieces) {
@@ -155,13 +116,6 @@ function PuzzleAppViewModel() {
         }
 
         document.onmousedown = onPuzzleClick;
-    }
-
-    function gameOver() {
-        document.onmousedown = null;
-        document.onmousemove = null;
-        document.onmouseup = null;
-        initPuzzle();
     }
 
     function resetPuzzleAndCheckWin() {
@@ -190,9 +144,6 @@ function PuzzleAppViewModel() {
             if (piece.fixedXPos != piece.sx || piece.fixedYPos != piece.sy) {
                 gameWin = false;
             }
-        }
-        if (gameWin) {
-            setTimeout(gameOver, 500);
         }
     }
 
@@ -321,7 +272,6 @@ function PuzzleAppViewModel() {
     puzzleHub.client.updateShuffledPuzzlePieces = function (pieces) {
         console.log('updating shuffled pieces');
         _pieces = pieces;
-        //_piecesDefault = $.extend({}, _pieces);
         redrawPieces(_pieces);
     }
 
@@ -349,14 +299,6 @@ function PuzzleAppViewModel() {
             _stage.strokeRect(piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
 
         }
-
-        //shapeModel = model;
-        //// Gradually move the shape towards the new location (interpolate)
-        //// The updateRate is used as the duration because by the time
-        //// we get to the next location we want to be at the "last" location
-        //// We also clear the animation queue so that we start a new
-        //// animation and don't lag behind.
-        //$shape.animate(shapeModel, { duration: updateRate, queue: false });
     };
 
     self.createPlayer = function () {
