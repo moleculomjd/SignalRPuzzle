@@ -36,12 +36,7 @@ namespace SignalRTeamPuzzle.Hubs
         public void LoadPuzzlePieces(List<PuzzlePiece> pieces)
         {
             _broadcaster._pieces = pieces;
-            var teamName = Clients.Caller.teamName;
-            if (!string.IsNullOrEmpty(teamName))
-            {
-                Clients.OthersInGroup(teamName).updateShuffledPuzzlePieces(pieces);
-            }
-            //Clients.AllExcept(Context.ConnectionId).updateShuffledPuzzlePieces(pieces);
+            Clients.AllExcept(Context.ConnectionId).updateShuffledPuzzlePieces(pieces);
         }
 
         public void OnPuzzleClick(PuzzlePiece piece)
@@ -94,6 +89,11 @@ namespace SignalRTeamPuzzle.Hubs
             teamToJoin.Players.Add(player);
             Clients.All.teamChanged(Teams);
             Groups.Add(Context.ConnectionId, teamNameToJoin);
+        }
+
+        public List<Team> GetTeams()
+        {
+            return Teams;
         }
 
         public override Task OnDisconnected(bool stopCalled)

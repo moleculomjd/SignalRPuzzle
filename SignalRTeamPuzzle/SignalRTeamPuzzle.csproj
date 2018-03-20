@@ -178,8 +178,11 @@
     <Content Include="Content\puzzle-background.jpg" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
-    <Content Include="Scripts\App\app.js" />
+    <Content Include="Scripts\App\player.js" />
+    <Content Include="Scripts\App\puzzle.js" />
+    <Content Include="Scripts\App\host.js" />
     <Content Include="Scripts\App\Models\PlayerViewModel.js" />
+    <Content Include="Scripts\App\ViewModels\HostViewModel.js" />
     <Content Include="Scripts\App\ViewModels\PlayerConnectionsViewModel.js" />
     <Content Include="Scripts\App\ViewModels\PuzzleAppViewModel.js" />
     <Content Include="Scripts\Lib\bootstrap.js" />
