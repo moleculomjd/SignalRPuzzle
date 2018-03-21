@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNet.SignalR;
 using SignalRTeamPuzzle.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using WebGrease.Css.Extensions;
 
 namespace SignalRTeamPuzzle.Hubs
 {
@@ -50,14 +52,17 @@ namespace SignalRTeamPuzzle.Hubs
 
         public void UpdatePuzzlePiece(PuzzlePiece clientModel)
         {
-            _broadcaster.LastUpdatedBy = Context.ConnectionId;
             // Update the shape model within our broadcaster
-            _broadcaster.UpdatePuzzlePiece(clientModel);
+            _broadcaster.UpdatePuzzlePiece(clientModel, Context.ConnectionId, Clients.Caller.teamName);
         }
 
         public void LoadPuzzlePieces(List<PuzzlePiece> pieces)
         {
-            _broadcaster._pieces = pieces;
+            foreach (var team in Teams)
+            {
+                _broadcaster._groupsPieceArrangement.AddOrUpdate(team.Name, pieces, (key, oldValue) => pieces);
+                _broadcaster._modelUpdateTracker.AddOrUpdate(team.Name, new ModelUpdatedData() { ModelUpdated = false, LastModifiedBy = ""}, (key, value) => new ModelUpdatedData() { ModelUpdated = false, LastModifiedBy = "" });
+            }
             Clients.AllExcept(Context.ConnectionId).updateShuffledPuzzlePieces(pieces);
         }
 
@@ -89,7 +94,9 @@ namespace SignalRTeamPuzzle.Hubs
 
         public void CreateTeam(string teamName)
         {
+            
             var playerName = Clients.Caller.playerName;
+
             var playerId = Context.ConnectionId;
             var player = new Player { name = playerName, id = playerId };
             var newTeam = new Team {
@@ -150,48 +157,65 @@ namespace SignalRTeamPuzzle.Hubs
 
         private readonly IHubContext _hubContext;
         private Timer _broadcastLoop;
-        public List<PuzzlePiece> _pieces;
+        public ConcurrentDictionary<string, List<PuzzlePiece>> _groupsPieceArrangement;
+        public ConcurrentDictionary<string, ModelUpdatedData> _modelUpdateTracker;
         public string LastUpdatedBy;
-        public bool _modelUpdated;
+
+        //public bool _modelUpdated;
         public Broadcaster()
         {
             // Save our hub context so we can easily use it 
             // to send to its connected clients
             _hubContext = GlobalHost.ConnectionManager.GetHubContext<PuzzleHub>();
-            _pieces = new List<PuzzlePiece>();
-            _modelUpdated = false;
+            _groupsPieceArrangement = new ConcurrentDictionary<string, List<PuzzlePiece>>();
+            _modelUpdateTracker = new ConcurrentDictionary<string, ModelUpdatedData>();
+
             // Start the broadcast loop
             _broadcastLoop = new Timer(
-                BroadcastPuzzlePieces,
-                null,
-                BroadcastInterval,
-                BroadcastInterval);
+                                       BroadcastPuzzlePieces,
+                                       null,
+                                       BroadcastInterval,
+                                       BroadcastInterval);
         }
+
         public void BroadcastPuzzlePieces(object state)
         {
-            if (_modelUpdated)
+            foreach (var groupPieceArrangement in _groupsPieceArrangement)
             {
-                _hubContext.Clients.AllExcept(LastUpdatedBy).updatePuzzlePiece(_pieces);
-            }
+                var pieces = groupPieceArrangement.Value;
 
-            _modelUpdated = false;
+                if (_modelUpdateTracker[groupPieceArrangement.Key].ModelUpdated)
+                {
+                    _hubContext.Clients.Group(groupPieceArrangement.Key, _modelUpdateTracker[groupPieceArrangement.Key].LastModifiedBy).updatePuzzlePiece(pieces);
+                }
+
+                _modelUpdateTracker[groupPieceArrangement.Key].ModelUpdated = false;
+            }
         }
-        public void UpdatePuzzlePiece(PuzzlePiece clientModel)
+
+        public void UpdatePuzzlePiece(PuzzlePiece clientModel, string connectionId, string teamName)
         {
-            var piece = _pieces[clientModel.index];
+            var piece = _groupsPieceArrangement[teamName][clientModel.index];
             piece.xPos = clientModel.xPos;
             piece.yPos = clientModel.yPos;
             piece.fixedXPos = clientModel.fixedXPos;
             piece.fixedYPos = clientModel.fixedYPos;
-            _modelUpdated = true;
+            _modelUpdateTracker[teamName].ModelUpdated = true;
+            _modelUpdateTracker[teamName].LastModifiedBy = connectionId;
+
         }
 
         public static Broadcaster Instance
         {
-            get
-            {
-                return _instance.Value;
-            }
+            get { return _instance.Value; }
         }
+
+        
+    }
+
+    public class ModelUpdatedData
+    {
+        public bool ModelUpdated { get; set; }
+        public string LastModifiedBy { get; set; }
     }
 }

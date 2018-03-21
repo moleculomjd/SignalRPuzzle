@@ -33,9 +33,16 @@ function PuzzleAppViewModel() {
 
 
     self.createTeam = function () {
-        self.myTeamName(self.newTeamName());
-        puzzleHub.state.teamName = self.newTeamName();
-        puzzleHub.server.createTeam(self.newTeamName());
+
+        var teamName = self.newTeamName();
+        if (!teamName) {
+            teamName = self.player().name() + "'s Team";
+        }
+
+        self.myTeamName(teamName);
+
+        puzzleHub.state.teamName = teamName;
+        puzzleHub.server.createTeam(teamName);
         self.newTeamName('');
         self.hasJoinedTeam(true);
     }
@@ -310,6 +317,14 @@ function PuzzleAppViewModel() {
         }
     };
 
+    puzzleHub.client.changeTransportMethod = function (transportMethod) {
+
+        $.connection.hub.stop();
+        $.connection.hub.start({ transport: transportMethod }).done(function () {
+            setInterval(updateServerModel, updateRate);
+        });
+    };
+
     self.createPlayer = function () {
         var player = { name: self.player().name(), id: '' };
         puzzleHub.state.playerName = self.player().name();
@@ -326,6 +341,10 @@ function PuzzleAppViewModel() {
 
         self.hasCreatedPlayer(true);
         self.newTeamName('');
+
+        setInterval(updateServerModel, updateRate);
     }
+
+
 }
 
