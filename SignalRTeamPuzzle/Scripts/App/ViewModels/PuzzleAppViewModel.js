@@ -8,6 +8,7 @@ function PuzzleAppViewModel() {
     // Join State 
     self.hasCreatedPlayer = ko.observable(false);
     self.hasJoinedTeam = ko.observable(false);
+    self.gameInProgress = ko.observable(false);
     self.gameStarted = ko.observable(false);
 
     self.teams = ko.observableArray([]);
@@ -30,9 +31,6 @@ function PuzzleAppViewModel() {
         return self.hasCreatedPlayer() && self.hasJoinedTeam();
     });
 
-    self.startGame = function () {
-        console.log('Game Started');
-    };
 
     self.createTeam = function () {
         self.myTeamName(self.newTeamName());
@@ -109,8 +107,6 @@ function PuzzleAppViewModel() {
             _stage.drawImage(_img, piece.sx, piece.sy, _pieceWidth, _pieceHeight, piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
             _stage.strokeRect(piece.xPos, piece.yPos, _pieceWidth, _pieceHeight);
         }
-
-        $('#canvas').mousedown(onPuzzleClick);
     }
 
     function resetPuzzleAndCheckWin() {
@@ -259,15 +255,23 @@ function PuzzleAppViewModel() {
             //_stage.restore();
             broadcastPuzzleClickedEvent(_currentPiece);
             onPuzzleClickEvents(_currentPiece);
-            //document.onmousemove = updatePuzzle;
             $('#canvas').mousemove(updatePuzzle);
-            //document.onmouseup = pieceDropped;
             $('#canvas').mouseup(pieceDropped);
         }
     }
 
+    self.startGame = function () {
+        console.log('Game Started');
+        self.gameStarted(true);
+        $('#canvas').mousedown(onPuzzleClick);
+    };
+
     function broadcastPuzzleClickedEvent(piece) {
         puzzleHub.server.onPuzzleClick(piece);
+    }
+
+    puzzleHub.client.gameStarted = function () {
+        self.startGame();
     }
 
     puzzleHub.client.gameOver = function (teamName, playerName) {
@@ -311,6 +315,9 @@ function PuzzleAppViewModel() {
         puzzleHub.state.playerName = self.player().name();
         $.connection.hub.start().done(function () {
             console.log('established connection');
+            puzzleHub.server.gameInProgress().then(function(inProgress) {
+                self.gameInProgress(inProgress);
+            });
             puzzleHub.server.connectNewPlayer(player);
             puzzleHub.server.getTeams().then(function (teams) {
                 self.teams(teams);

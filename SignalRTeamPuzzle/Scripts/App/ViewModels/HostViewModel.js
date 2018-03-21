@@ -16,7 +16,7 @@ function HostViewModel() {
 
     self.startGame = function () {
         console.log('starting game');
-        // Do something to start the game
+        puzzleHub.server.startGame();
     };
 
     puzzleHub.client.teamChanged = function (teams) {

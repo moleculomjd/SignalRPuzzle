@@ -29,7 +29,7 @@
             @* Ready to play - Game Board*@
             <div data-bind="visible: isReadyToPlay">
                 <div class="col-md-6">
-                    <canvas id="canvas"></canvas>
+                    <canvas data-bind="style: { opacity : gameStarted() ? 1 : 0.3 }" id="canvas"></canvas>
                 </div>
                 <div class="col-md-6">
 

@@ -15,6 +15,7 @@ namespace SignalRTeamPuzzle.Hubs
         private static List<Team> Teams = new List<Team>();
 
         private static bool IsGameOver { get; set; }
+        private static bool IsGameInProgress { get; set; }
 
         public PuzzleHub() : this(Broadcaster.Instance) { }
 
@@ -27,6 +28,17 @@ namespace SignalRTeamPuzzle.Hubs
         }
 
         #region Puzzle Methods
+
+        public void StartGame()
+        {
+            IsGameOver = false;
+            IsGameInProgress = true;
+            Clients.AllExcept(Context.ConnectionId).gameStarted();
+        }
+        public bool GameInProgress()
+        {
+            return IsGameInProgress;
+        }
 
         public void GameOver()
         {
