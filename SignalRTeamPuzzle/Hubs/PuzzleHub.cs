@@ -73,13 +73,7 @@ namespace SignalRTeamPuzzle.Hubs
             {
                 Clients.OthersInGroup(teamName).updatePuzzleClicked(piece);
             }
-            //Clients.AllExcept(Context.ConnectionId).updatePuzzleClicked(piece);
         }
-
-        //public void StyleDropPuzzlePiece(PuzzlePiece piece)
-        //{
-        //    Clients.AllExcept(Context.ConnectionId).updateDropPuzzlePiece(piece);
-        //}
 
         #endregion
 
@@ -108,14 +102,13 @@ namespace SignalRTeamPuzzle.Hubs
             Groups.Add(Context.ConnectionId, teamName);
         }
 
-        // TODO: Look at possible race conditions here
         public void JoinTeam(string teamNameToJoin)
         {
             var playerId = Context.ConnectionId;
             var playerName = Clients.Caller.playerName;
             var player = new Player { name = playerName, id = playerId };
-            var teamToJoin = Teams.Where(t => t.Name == teamNameToJoin).FirstOrDefault();
-            teamToJoin.Players.Add(player);
+            var teamToJoin = Teams.FirstOrDefault(t => t.Name == teamNameToJoin);
+            teamToJoin?.Players.Add(player);
             Clients.All.teamChanged(Teams);
             Groups.Add(Context.ConnectionId, teamNameToJoin);
         }
@@ -131,10 +124,10 @@ namespace SignalRTeamPuzzle.Hubs
             ConnectedPlayers.RemoveAll(p => p.id == playerId);
             Clients.All.newPlayerConnected(ConnectedPlayers);
 
-            var team = Teams.Where(t => t.Players.Any(p => p.id == playerId)).FirstOrDefault();
+            var team = Teams.FirstOrDefault(t => t.Players.Any(p => p.id == playerId));
             if (team != null)
             {
-                Teams.Where(t => t.Name == team.Name).FirstOrDefault().Players.RemoveAll(p => p.id == playerId);
+                Teams.FirstOrDefault(t => t.Name == team.Name)?.Players.RemoveAll(p => p.id == playerId);
                 if (team.Players.Count == 0)
                 {
                     Teams.Remove(team);

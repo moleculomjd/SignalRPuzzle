@@ -64,8 +64,6 @@ function PuzzleAppViewModel() {
 
 
     // Puzzle Variables 
-
-    //$shape = $("#shape"),
     // Send a maximum of 10 messages per second
     // (mouse movements trigger a lot of messages)
     var messageFrequency = 10,
@@ -254,12 +252,6 @@ function PuzzleAppViewModel() {
         if (_currentPiece != null) {
             _currentPiece.xPos = (_mouse.x - (_pieceWidth / 2));
             _currentPiece.yPos = (_mouse.y - (_pieceHeight / 2));
-            //_currentPiece.moved = true;
-            //_stage.clearRect(_currentPiece.xPos, _currentPiece.yPos, _pieceWidth, _pieceHeight);
-            //_stage.save();
-            //_stage.globalAlpha = .9;
-            //_stage.drawImage(_img, _currentPiece.sx, _currentPiece.sy, _pieceWidth, _pieceHeight, _mouse.x - (_pieceWidth / 2), _mouse.y - (_pieceHeight / 2), _pieceWidth, _pieceHeight);
-            //_stage.restore();
             broadcastPuzzleClickedEvent(_currentPiece);
             onPuzzleClickEvents(_currentPiece);
             $('#canvas').mousemove(updatePuzzle);
