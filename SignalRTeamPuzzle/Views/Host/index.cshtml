@@ -1,0 +1,59 @@
+﻿
+<script src="~/Scripts/App/Models/PlayerViewModel.js"></script>
+<script src="~/Scripts/App/ViewModels/PlayerConnectionsViewModel.js"></script>
+<script src="~/Scripts/App/ViewModels/HostViewModel.js"></script>
+<script src="~/Scripts/App/puzzle.js"></script>
+<script src="~/Scripts/App/host.js"></script>
+
+<div class="app-container">
+
+    <div class="row">
+        
+        @* Player Connections *@
+        <div id="PlayerConnections" class="col-md-2" data-bind="if: isConnected">
+            
+            <h2>Connected Players</h2>
+            <hr />
+
+            <ul id="connectedPlayers">
+                <div data-bind="foreach: connectedPlayers">
+                    <li>
+                        <span data-bind="text: name"></span>
+                    </li>
+                </div>
+            </ul>
+        </div>
+
+        <div id="HostContainer" class="col-md-10">
+
+            <div class="col-md-6">
+                <canvas id="canvas"></canvas>
+            </div>
+
+            <div class="col-md-6">
+                <h2>Teams</h2>
+                <p data-bind="if: !hasTeams()">No teams...</p>
+                <div data-bind="if: hasTeams">
+                    <ul data-bind="foreach: { data: teams, as: 'team' }">
+                        <span data-bind="text: team.name"></span>
+                        <li>
+                            <ul data-bind="foreach: { data: team.players, as: 'player' }">
+                                <li>
+                                    <span data-bind="text: player.name"></span>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <hr/>
+                
+                <button type="submit" class="btn btn-primary" data-bind="click: shufflePieces">Shuffle Pieces</button>
+                <button type="submit" class="btn btn-success" data-bind="click: startGame">Start Game</button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

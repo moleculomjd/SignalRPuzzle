@@ -1,0 +1,120 @@
+﻿
+<script src="~/Scripts/App/Models/PlayerViewModel.js"></script>
+<script src="~/Scripts/App/ViewModels/PlayerConnectionsViewModel.js"></script>
+<script src="~/Scripts/App/ViewModels/PuzzleAppViewModel.js"></script>
+<script src="~/Scripts/App/puzzle.js"></script>
+<script src="~/Scripts/App/player.js"></script>
+
+<div id="puzzleContainer" class="app-container">
+
+    <div class="row">
+
+        @* Player Connections *@
+        <div id="PlayerConnections" class="col-md-2" data-bind="if: isConnected">
+            
+            <h2>Connected Players</h2>
+            <hr />
+
+            <ul id="connectedPlayers">
+                <div data-bind="foreach: connectedPlayers">
+                    <li>
+                        <span data-bind="text: name"></span>
+                    </li>
+                </div>
+            </ul>
+        </div>
+
+        <div id="PuzzleApp" class="col-md-10">
+
+            @* Ready to play - Game Board*@
+            <div data-bind="visible: isReadyToPlay">
+                <div class="col-md-6">
+                    <canvas data-bind="style: { opacity : gameStarted() ? 1 : 0.3 }" id="canvas"></canvas>
+                </div>
+                <div class="col-md-6">
+
+                   <h2>My Team</h2> 
+                    @*Need to do this for the binding to work*@
+                    <ul data-bind="foreach: { data: myTeam, as: 'team' }">
+                        <span data-bind="text: team.name"></span>
+                        <li>
+                            <ul data-bind="foreach: { data: team.players, as: 'player' }">
+                                <li>
+                                    <span data-bind="text: player.name"></span>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <h2>Other Teams </h2>
+                    <hr />
+                    <ul data-bind="foreach: { data: otherTeams, as: 'team' }">
+                        <span data-bind="text: team.name"></span>
+                        <li>
+                            <ul data-bind="foreach: { data: team.players, as: 'player' }">
+                                <li>
+                                    <span data-bind="text: player.name"></span>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+
+                </div>
+            </div>
+
+            @* Game / Team setup *@
+            <div id="setupContainer" class="col-md-10" >
+                <div class="col-md-4 col-md-offset-4" data-bind="if: !isReadyToPlay()">
+                    <div data-bind="if: !hasCreatedPlayer()">
+                        <h2>Sign up</h2>
+                        <hr />
+                        <form>
+                            <div class="form-group">
+                                <label for="playerName">Player Name</label>
+                                <input id="playerName" type="text" class="form-control" data-bind="value: player().name" />
+                            </div>
+                            <button type="submit" class="btn btn-primary" data-bind="click: createPlayer">Create Player</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div data-bind="if: isReadyToJoinTeam">
+                    <div class="col-md-6">
+                        <h2>Join an existing team</h2>
+                        <hr />
+                        <ul data-bind="foreach: { data: teams, as: 'team' }">
+                            <span data-bind="text: team.name"></span>
+                            <button type="submit" class="btn btn-default" data-bind="click: function(data,event) { $root.joinTeam(team.name) }">Join Team</button>
+                            <li>
+                                <ul data-bind="foreach: { data: team.players, as: 'player' }">
+                                    <li>
+                                        <span data-bind="text: player.name"></span>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h2>Create a new team</h2>
+                        <hr />
+                        <form>
+                            <div class="form-group">
+                                <label for="newTeamName">New Team Name</label>
+                                <input id="newTeamName" type="text" class="form-control" data-bind="value: newTeamName" />
+                            </div>
+                            <button type="submit" class="btn btn-primary" data-bind="click: createTeam">Create Team</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    
+
+
+</div>
